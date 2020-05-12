@@ -40,6 +40,10 @@ def find_libc(args: list):
     
     matches = [l.decode() for l in proc.stdout.splitlines()]
 
+    if not matches:
+        log.warning('No matches found')
+        exit(1)
+
     if len(matches) > 1:
         selection = prompt_for_match(matches)
     else:
