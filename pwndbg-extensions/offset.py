@@ -8,6 +8,5 @@ parser.add_argument('address', type=int, help='The address to find the offset to
 @pwndbg.commands.OnlyWhenRunning
 def offset(address):
     base_addr = pwndbg.elf.map(address)[0].start
-    offset = address - base_addr
     print(f'Base = {hex(base_addr)}')
     gdb.execute(f'p/x {hex(address)} - {hex(base_addr)}')
