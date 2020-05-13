@@ -142,7 +142,7 @@ def find_libc(*args):
     matches = proc.stdout.readlines()
 
     if not matches:
-        log.warning('No matches found')
+        log.warning('No matches found for "%s" in libc db!' % ' '.join(args))
         exit(1)
 
     if len(matches) > 1:
