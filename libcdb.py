@@ -15,24 +15,18 @@ def main():
 
     separator()
 
-    offsets = dump_libc(libc_id)
-    offsets.update(dump_libc(libc_id, sys.argv[1]))
+    offsets = dump_libc(libc_id, sys.argv[1])
+    offsets.update(dump_libc(libc_id))
     
     for sym, addr in offsets.items():
         log.info('%s = %s' % (sym, hex(addr)))
 
     separator()
 
-    oneg_results = run_one_gadget(libc_id)
-    for res in oneg_results:
-        lines = res.split('\n')
-        log.info(lines[0])
-        for l in lines[1:]:
-            print('    %s' % l)
-        print('')
+    print_oneg_results(libc_id)
 
 
-def get_offsets(symbol, addr, libc_id=None):
+def get_offsets(symbol, addr, libc_id=None, run_oneg=False):
     if not libc_id:
         libc_id = find_libc(symbol, hex(addr))
     
@@ -45,7 +39,21 @@ def get_offsets(symbol, addr, libc_id=None):
     for symbol in offsets.keys():
         addrs[symbol] = libc_base + offsets[symbol]
 
+    if run_oneg:
+        log.warning('Fetching one_gadget results...')
+        print_oneg_results(libc_id)
+
     return addrs
+
+
+def print_oneg_results(libc_id):
+    oneg_results = run_one_gadget(libc_id)
+    for res in oneg_results:
+        lines = res.split('\n')
+        log.info(lines[0])
+        for l in lines[1:]:
+            print('    %s' % l)
+        print('')
 
 
 def find_libc(*args):
