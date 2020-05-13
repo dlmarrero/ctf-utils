@@ -9,6 +9,48 @@ from pwn import log
 LIBCDB_DIR = '/home/dmo/ctf/utils/libc-database'
 
 
+class LIBCDB:
+    # TODO handle multiple symbols
+    def __init__(self, symbol, addr, libc_id=None):
+        self.symbol = symbol
+        self.addr = addr
+        if not libc_id:
+            self.libc_id = find_libc(symbol, addr)
+        else:
+            self.libc_id = libc_id
+
+        addrs = self._calculate_addrs()
+
+        # Convenience vars for autocomplete goodness
+        self.system = addrs['system']
+        self.__libc_start_main_ret = addrs['__libc_start_main_ret']
+        self.str_bin_sh = addrs['str_bin_sh']
+        self.base = addrs['base']
+        self.addrs = addrs
+
+    def _calculate_addrs(self):
+        offsets = dump_libc(self.libc_id, self.symbol)
+        offsets.update(dump_libc(self.libc_id))
+
+        libc_base = self.addr - offsets[self.symbol]
+        addrs = {'base': libc_base}
+
+        for symbol in offsets.keys():
+            addrs[symbol] = libc_base + offsets[symbol]
+
+        return addrs
+
+    def one_gadget(self):
+        log.warning('Fetching one_gadget results...')
+        oneg_results = run_one_gadget(self.libc_id)
+        for res in oneg_results:
+            lines = res.split('\n')
+            log.info(lines[0])
+            for l in lines[1:]:
+                print('    %s' % l)
+            print('')
+
+
 def main():
     libc_id = find_libc(*sys.argv[1:])
     log.info(libc_id)
