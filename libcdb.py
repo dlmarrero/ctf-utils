@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import subprocess
 import sys
 import os
@@ -10,18 +10,16 @@ LIBCDB_DIR = '/home/dmo/ctf/utils/libc-database'
 
 
 def main():
-    libc_id = find_libc(sys.argv[1:])
+    libc_id = find_libc(*sys.argv[1:])
     log.info(libc_id)
 
     separator()
 
-    symbol_offset = dump_libc(libc_id, sys.argv[1])
-    other_offsets = dump_libc(libc_id)
+    offsets = dump_libc(libc_id)
+    offsets.update(dump_libc(libc_id, sys.argv[1]))
     
-    offsets = {**symbol_offset, **other_offsets}
     for sym, addr in offsets.items():
-        addr = hex(int(addr, 16))
-        log.info(f'{sym} = {addr}')
+        log.info('%s = %s' % (sym, hex(addr)))
 
     separator()
 
@@ -34,11 +32,26 @@ def main():
         print('')
 
 
-def find_libc(args: list):
-    find_argv = [os.path.join(LIBCDB_DIR, 'find')] + args
-    proc = subprocess.run(find_argv, capture_output=True)
+def get_offsets(symbol, addr, libc_id=None):
+    if not libc_id:
+        libc_id = find_libc(symbol, hex(addr))
     
-    matches = [l.decode() for l in proc.stdout.splitlines()]
+    offsets = dump_libc(libc_id, symbol)
+    offsets.update(dump_libc(libc_id))
+
+    libc_base = addr - offsets[symbol]
+    addrs = {'base': libc_base}
+
+    for symbol in offsets.keys():
+        addrs[symbol] = libc_base + offsets[symbol]
+
+    return addrs
+
+
+def find_libc(*args):
+    find_argv = [os.path.join(LIBCDB_DIR, 'find')] + list(args)
+    proc = subprocess.Popen(find_argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    matches = proc.stdout.readlines()
 
     if not matches:
         log.warning('No matches found')
@@ -58,21 +71,21 @@ def dump_libc(libc_id, symbol=None):
     if symbol:
         dump_argv.append(symbol)
 
-    proc = subprocess.run(dump_argv, capture_output=True)
+    proc = subprocess.Popen(dump_argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     offsets = {}
-    for line in proc.stdout.splitlines():
+    for line in proc.stdout.readlines():
         l = line.decode()
         symbol, addr = l.split(' = ')
-        offsets[symbol.replace('offset_', '')] = addr
+        offsets[symbol.replace('offset_', '')] = int(addr, 16)
 
     return offsets
 
 
 def run_one_gadget(libc_id):
     oneg_argv = ['one_gadget', os.path.join(LIBCDB_DIR, 'db', libc_id + '.so')]
-    proc = subprocess.run(oneg_argv, capture_output=True)
-    results = proc.stdout.decode().split('\n\n')
+    proc = subprocess.Popen(oneg_argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    results = proc.stdout.read().split('\n\n')
     return results
 
 
