@@ -11,7 +11,7 @@ LIBCDB_DIR = '/home/dmo/ctf/utils/libc-database'
 
 class LIBCDB:
     # TODO handle multiple symbols
-    def __init__(self, symbol, addr, libc_id=None):
+    def __init__(self, symbol, addr, libc_id=None, one_gadget=True):
         self.symbol = symbol
         self.addr = addr
         if not libc_id:
@@ -25,8 +25,16 @@ class LIBCDB:
         self.system = addrs['system']
         self.__libc_start_main_ret = addrs['__libc_start_main_ret']
         self.str_bin_sh = addrs['str_bin_sh']
+        self.dup2 = addrs['dup2']
+        self.write = addrs['write']
+        self.read = addrs['read']
         self.base = addrs['base']
         self.addrs = addrs
+
+        if one_gadget:
+            self.one_gadget = self._init_one_gadget()
+        else:
+            self.one_gadget = None
 
     def _calculate_addrs(self):
         offsets = dump_libc(self.libc_id, self.symbol)
@@ -40,15 +48,45 @@ class LIBCDB:
 
         return addrs
 
-    def one_gadget(self):
-        log.warning('Fetching one_gadget results...')
+    def _init_one_gadget(self):
         oneg_results = run_one_gadget(self.libc_id)
+        self._oneg_results = oneg_results
+
+        # initialize one_gadget array
+        one_gadgets = list()
+
         for res in oneg_results:
             lines = res.split('\n')
-            log.info(lines[0])
-            for l in lines[1:]:
-                print('    %s' % l)
-            print('')
+            
+            words = lines[0].split()
+            offset = int(words[0], 16)
+            description = ' '.join(words[1:])
+
+            address = self.base + offset
+            constraints = [l.strip() for l in lines[1:] if 'constraints' not in l]
+            one_gadgets.append(OneGadget(address, description, constraints))
+
+        return one_gadgets
+
+    def __str__(self):
+        s = self.libc_id + '\n'
+        s += '-' * 0x20 + '\n'
+        for sym, addr in self.addrs.items():
+            s += '%s = %s\n' % (sym, hex(addr))
+        s += '-' * 0x20 + '\n'
+        s += '\n\n'.join(self._oneg_results)
+        s += '\n'
+        return s
+
+
+class OneGadget:
+    def __init__(self, address, description, constraints):
+        self.address = address
+        self.description = description
+        self.constraints = constraints
+
+    def __str__(self):
+        return '%s %s\n%s' % (hex(self.address), self.description, ' ; '.join(self.constraints))
 
 
 def main():
