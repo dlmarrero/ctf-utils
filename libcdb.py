@@ -15,7 +15,7 @@ class LIBCDB:
         self.symbol = symbol
         self.addr = addr
         if not libc_id:
-            self.libc_id = find_libc(symbol, addr)
+            self.libc_id = find_libc(symbol, hex(addr))
         else:
             self.libc_id = libc_id
 
