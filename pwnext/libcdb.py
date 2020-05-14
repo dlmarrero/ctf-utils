@@ -6,7 +6,7 @@ import re
 from pwn import log
 
 
-LIBCDB_DIR = '/home/dmo/ctf/utils/libc-database'
+LIBCDB_DIR = os.path.expanduser('~/libc-database')
 
 
 class LIBCDB:
