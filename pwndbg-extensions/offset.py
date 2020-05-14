@@ -16,6 +16,6 @@ def offset(address_or_symbol):
         address = int(gdb_val)
 
     base_addr = pwndbg.elf.map(address)[0].start
-    print(f'Addr = {hex(address)}')
-    print(f'Base = {hex(base_addr)}')
-    gdb.execute(f'p/x {hex(address)} - {hex(base_addr)}')
+    print('Addr = %s' % hex(address))
+    print('Base = %s' % hex(base_addr))
+    gdb.execute('p/x %s' % hex(address - base_addr))

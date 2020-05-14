@@ -30,7 +30,7 @@ def assemble(address, code):
             mapped_addr = long(str(gdb.parse_and_eval('mmap(0x%x, 0x1000, 7, 0x32, -1, 0)' % address)), 16)
         except pwndbg.gdb.error:
             # Handle binaries where symbol for mmap is not loaded
-            raise Exception(f"Address {hex(address)} is not mapped and mmap symbol not in current context")
+            raise Exception("Address %s is not mapped and mmap symbol not in current context" % hex(address))
 
         # mmap returns -1 on failure, we check for 32b and 64b -1
         if mapped_addr == 0xffffffffffffffff or mapped_addr == 0xffffffff:
