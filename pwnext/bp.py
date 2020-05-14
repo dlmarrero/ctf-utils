@@ -22,4 +22,8 @@ def set_bp(io, *args):
     if args:
         gdbscript += 'c'
 
-    gdb.attach(io, gdbscript)
+    try:
+        gdb.attach(io, gdbscript)
+    except AttributeError:
+        # hack to fix libc docker containers
+        pass
