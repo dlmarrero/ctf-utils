@@ -1,4 +1,5 @@
 # Runs ubuntu 16.04 (libc-2.23) with some tools installed
+# Switch to ubuntu:18.04 for libc-2.27
 FROM ubuntu:16.04
 
 # Install tools
