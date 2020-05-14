@@ -23,3 +23,6 @@ RUN pip3 install pwntools
 # Install one_gadget
 RUN gem install one_gadget
 
+# NOTE - to use libc database pwntools extension,
+# mount it to ~/libc-database
+
